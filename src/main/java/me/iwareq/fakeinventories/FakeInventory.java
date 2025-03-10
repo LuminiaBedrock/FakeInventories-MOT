@@ -12,6 +12,7 @@ import cn.nukkit.network.protocol.ContainerClosePacket;
 import cn.nukkit.network.protocol.ContainerOpenPacket;
 import me.iwareq.fakeinventories.block.FakeBlock;
 import me.iwareq.fakeinventories.util.ItemHandler;
+import lombok.Getter;
 import lombok.Setter;
 
 import java.util.*;
@@ -22,6 +23,7 @@ public class FakeInventory extends BaseInventory {
 
     private final FakeBlock fakeBlock;
 
+    @Getter
     @Setter
     private String title;
     @Setter
@@ -142,13 +144,11 @@ public class FakeInventory extends BaseInventory {
         }
     }
 
-    @Override
-    public String getTitle() {
-        return this.title;
-    }
-
     public void handle(int index, Item item, InventoryTransactionEvent event) {
         ItemHandler handler = this.handlers.getOrDefault(index, this.defaultItemHandler);
+        if (handler == null) {
+            return;
+        }
         handler.handle(item, event);
     }
 }
