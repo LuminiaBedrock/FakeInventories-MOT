@@ -10,9 +10,9 @@ import cn.nukkit.item.Item;
 import cn.nukkit.math.Vector3;
 import cn.nukkit.network.protocol.ContainerClosePacket;
 import cn.nukkit.network.protocol.ContainerOpenPacket;
-import lombok.Setter;
 import me.iwareq.fakeinventories.block.FakeBlock;
 import me.iwareq.fakeinventories.util.ItemHandler;
+import lombok.Setter;
 
 import java.util.*;
 
@@ -21,6 +21,7 @@ public class FakeInventory extends BaseInventory {
     private final Map<Integer, ItemHandler> handlers = new HashMap<>();
 
     private final FakeBlock fakeBlock;
+
     @Setter
     private String title;
     @Setter

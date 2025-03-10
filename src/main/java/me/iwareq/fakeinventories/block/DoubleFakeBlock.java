@@ -20,8 +20,9 @@ public class DoubleFakeBlock extends SingleFakeBlock {
         Vector3 blockPosition = player.getPosition().add(this.getOffset(player)).floor();
         DimensionData dimensionData = player.getLevel().getDimensionData();
         if (blockPosition.getFloorY() >= dimensionData.getMinHeight() && blockPosition.getFloorY() < dimensionData.getMaxHeight()) {
-            if ((blockPosition.getFloorX() & 1) == 1) return Arrays.asList(blockPosition, blockPosition.east());
-
+            if ((blockPosition.getFloorX() & 1) == 1) {
+                return Arrays.asList(blockPosition, blockPosition.east());
+            }
             return Arrays.asList(blockPosition, blockPosition.west());
         }
 

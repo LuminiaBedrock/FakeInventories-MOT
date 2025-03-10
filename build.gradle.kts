@@ -3,19 +3,17 @@ plugins {
 }
 
 group = "me.iwareq.fakeinventories"
-version = "1.1.8"
+version = "1.1.8-MOT"
 
 repositories {
     mavenCentral()
-    maven("https://repo.opencollab.dev/maven-releases")
-    maven("https://repo.opencollab.dev/maven-snapshots")
+    maven("https://repo.lanink.cn/repository/maven-public/")
 }
 
 dependencies {
-    implementation("cn.nukkit:nukkit:1.0-SNAPSHOT")
-
-    compileOnly("org.projectlombok:lombok:1.18.30")
-    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    compileOnly("cn.nukkit:Nukkit:MOT-SNAPSHOT")
+    compileOnly("org.projectlombok:lombok:1.18.36")
+    annotationProcessor("org.projectlombok:lombok:1.18.36")
 }
 
 tasks.withType<JavaCompile> {

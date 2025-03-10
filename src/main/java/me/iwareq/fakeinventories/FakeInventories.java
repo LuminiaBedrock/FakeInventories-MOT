@@ -10,31 +10,24 @@ import cn.nukkit.inventory.InventoryType;
 import cn.nukkit.inventory.transaction.action.SlotChangeAction;
 import cn.nukkit.item.Item;
 import cn.nukkit.plugin.PluginBase;
-import lombok.Getter;
 import me.iwareq.fakeinventories.block.DoubleFakeBlock;
 import me.iwareq.fakeinventories.block.FakeBlock;
 import me.iwareq.fakeinventories.block.SingleFakeBlock;
+import lombok.Getter;
 
 import java.util.EnumMap;
 import java.util.Map;
 
 public class FakeInventories extends PluginBase implements Listener {
 
-    private static final Map<InventoryType, FakeBlock> FAKE_BLOCKS = new EnumMap<>(InventoryType.class);
-
     @Getter
     private static FakeInventories instance;
 
-    public static FakeBlock getFakeBlock(InventoryType inventoryType) {
-        FakeBlock fakeBlock = FAKE_BLOCKS.get(inventoryType);
-        if (fakeBlock == null)
-            throw new NullPointerException("FakeBlock for " + inventoryType.name() + " inventory not found!");
-
-        return fakeBlock;
-    }
+    private static final Map<InventoryType, FakeBlock> FAKE_BLOCKS = new EnumMap<>(InventoryType.class);
 
     @Override
     public void onLoad() {
+        instance = this;
         FAKE_BLOCKS.put(InventoryType.CHEST, new SingleFakeBlock(BlockID.CHEST, BlockEntity.CHEST));
         FAKE_BLOCKS.put(InventoryType.ENDER_CHEST, new SingleFakeBlock(BlockID.ENDER_CHEST, BlockEntity.ENDER_CHEST));
         FAKE_BLOCKS.put(InventoryType.DOUBLE_CHEST, new DoubleFakeBlock(BlockID.CHEST, BlockEntity.CHEST));
@@ -55,16 +48,20 @@ public class FakeInventories extends PluginBase implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onInventoryTransaction(InventoryTransactionEvent event) {
         event.getTransaction().getActions().forEach(action -> {
-            if (action instanceof SlotChangeAction) {
-                SlotChangeAction slotChange = (SlotChangeAction) action;
-                if (slotChange.getInventory() instanceof FakeInventory) {
-                    FakeInventory inventory = (FakeInventory) slotChange.getInventory();
-
+            if (action instanceof SlotChangeAction slotChange) {
+                if (slotChange.getInventory() instanceof FakeInventory inventory) {
                     int slot = slotChange.getSlot();
                     Item sourceItem = action.getSourceItem();
                     inventory.handle(slot, sourceItem, event);
                 }
             }
         });
+    }
+    public static FakeBlock getFakeBlock(InventoryType inventoryType) {
+        FakeBlock fakeBlock = FAKE_BLOCKS.get(inventoryType);
+        if (fakeBlock == null) {
+            throw new NullPointerException("FakeBlock for " + inventoryType.name() + " inventory not found!");
+        }
+        return fakeBlock;
     }
 }
