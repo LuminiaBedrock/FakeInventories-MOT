@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "me.iwareq.fakeinventories"
-version = "1.1.9-MOT"
+version = "1.1.10-MOT"
 
 repositories {
     mavenCentral()

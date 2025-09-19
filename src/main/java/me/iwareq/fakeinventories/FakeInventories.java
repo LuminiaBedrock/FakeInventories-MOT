@@ -1,22 +1,29 @@
 package me.iwareq.fakeinventories;
 
+import cn.nukkit.Player;
 import cn.nukkit.block.BlockID;
 import cn.nukkit.blockentity.BlockEntity;
 import cn.nukkit.event.EventHandler;
 import cn.nukkit.event.EventPriority;
 import cn.nukkit.event.Listener;
 import cn.nukkit.event.inventory.InventoryTransactionEvent;
+import cn.nukkit.event.player.PlayerQuitEvent;
+import cn.nukkit.event.server.DataPacketReceiveEvent;
 import cn.nukkit.inventory.InventoryType;
 import cn.nukkit.inventory.transaction.action.SlotChangeAction;
 import cn.nukkit.item.Item;
+import cn.nukkit.network.protocol.PacketViolationWarningPacket;
+import cn.nukkit.network.protocol.ProtocolInfo;
 import cn.nukkit.plugin.PluginBase;
+import lombok.Getter;
 import me.iwareq.fakeinventories.block.DoubleFakeBlock;
 import me.iwareq.fakeinventories.block.FakeBlock;
 import me.iwareq.fakeinventories.block.FakeBlockOffset;
 import me.iwareq.fakeinventories.block.SingleFakeBlock;
-import lombok.Getter;
+import me.iwareq.fakeinventories.util.FakeInvDispatcher;
 
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 
 public class FakeInventories extends PluginBase implements Listener {
@@ -24,6 +31,7 @@ public class FakeInventories extends PluginBase implements Listener {
     @Getter
     private static FakeInventories instance;
 
+    private static final Map<Player, FakeInvDispatcher> FAKE_INV_DISPATCHERS = new HashMap<>();
     private static final Map<InventoryType, FakeBlock> FAKE_BLOCKS = new EnumMap<>(InventoryType.class);
     private static FakeBlockOffset FAKE_BLOCK_OFFSET;
 
@@ -60,6 +68,30 @@ public class FakeInventories extends PluginBase implements Listener {
                 }
             }
         });
+    }
+
+    @EventHandler
+    public void onPacketReceive(DataPacketReceiveEvent event) {
+        if (event.getPacket() instanceof PacketViolationWarningPacket packet) {
+            if (packet.packetId == ProtocolInfo.toNewProtocolID(PacketViolationWarningPacket.NETWORK_ID) &&
+                    packet.type == PacketViolationWarningPacket.PacketViolationType.UNKNOWN &&
+                    packet.severity == PacketViolationWarningPacket.PacketViolationSeverity.UNKNOWN
+            ) {
+                FakeInvDispatcher dispatcher = FakeInventories.getFakeInvDispatcher(event.getPlayer());
+                if (dispatcher.isActive()) {
+                    event.setCancelled();
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        FAKE_INV_DISPATCHERS.remove(event.getPlayer());
+    }
+
+    public static FakeInvDispatcher getFakeInvDispatcher(Player player) {
+        return FAKE_INV_DISPATCHERS.computeIfAbsent(player, p -> new FakeInvDispatcher());
     }
 
     public static FakeBlock getFakeBlock(InventoryType inventoryType) {

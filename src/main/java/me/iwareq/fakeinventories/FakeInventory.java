@@ -11,6 +11,7 @@ import cn.nukkit.math.Vector3;
 import cn.nukkit.network.protocol.ContainerClosePacket;
 import cn.nukkit.network.protocol.ContainerOpenPacket;
 import me.iwareq.fakeinventories.block.FakeBlock;
+import me.iwareq.fakeinventories.util.FakeInvDispatcher;
 import me.iwareq.fakeinventories.util.ItemHandler;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,20 +20,16 @@ import java.util.*;
 
 public class FakeInventory extends BaseInventory {
 
-    private final Map<Integer, ItemHandler> handlers = new HashMap<>();
-
-    private final FakeBlock fakeBlock;
-
-    @Setter
-    @Getter
-    private int openDelay = 1;
-
     @Getter
     @Setter
     private String title;
 
     @Setter
     private ItemHandler defaultItemHandler;
+
+    private final Map<Integer, ItemHandler> handlers = new HashMap<>();
+
+    private final FakeBlock fakeBlock;
 
     public FakeInventory(InventoryType inventoryType) {
         this(inventoryType, null);
@@ -50,39 +47,46 @@ public class FakeInventory extends BaseInventory {
         this.fakeBlock.create(player, this.getTitle());
 
         Server.getInstance().getScheduler().scheduleDelayedTask(FakeInventories.getInstance(), () -> {
-            ContainerOpenPacket packet = new ContainerOpenPacket();
-            packet.windowId = player.getWindowId(this);
-            packet.type = this.getType().getNetworkType();
+            int windowId = player.getWindowId(this);
+            FakeInvDispatcher fakeInvDispatcher = FakeInventories.getFakeInvDispatcher(player);
+            fakeInvDispatcher.run(windowId, () -> {
 
-            List<Vector3> positions = this.fakeBlock.getPositions(player);
-            if (positions.isEmpty()) {
-                return;
-            }
+                ContainerOpenPacket packet = new ContainerOpenPacket();
+                packet.windowId = windowId;
+                packet.type = this.getType().getNetworkType();
 
-            Vector3 position = positions.get(0);
-            packet.x = position.getFloorX();
-            packet.y = position.getFloorY();
-            packet.z = position.getFloorZ();
-            player.dataPacket(packet);
+                List<Vector3> positions = this.fakeBlock.getPositions(player);
+                if (positions.isEmpty()) {
+                    return;
+                }
 
-            super.onOpen(player);
+                Vector3 position = positions.get(0);
+                packet.x = position.getFloorX();
+                packet.y = position.getFloorY();
+                packet.z = position.getFloorZ();
+                player.dataPacket(packet);
 
-            this.sendContents(player);
-        }, openDelay);
+                super.onOpen(player);
+                this.sendContents(player);
+            });
+        }, 1);
     }
 
     @Override
     public void onClose(Player player) {
+        int windowId = player.getWindowId(this);
+
         ContainerClosePacket packet = new ContainerClosePacket();
-        packet.windowId = player.getWindowId(this);
+        packet.windowId = windowId;
         packet.wasServerInitiated = player.getClosingWindowId() != packet.windowId;
         player.dataPacket(packet);
 
         super.onClose(player);
 
-        Server.getInstance().getScheduler().scheduleDelayedTask(FakeInventories.getInstance(), () -> {
-            this.fakeBlock.remove(player);
-        }, 1);
+        FakeInvDispatcher fakeInvDispatcher = FakeInventories.getFakeInvDispatcher(player);
+        fakeInvDispatcher.cancel(windowId);
+
+        this.fakeBlock.remove(player);
     }
 
     public Item[] addItem(ItemHandler handler, Item... slots) {
